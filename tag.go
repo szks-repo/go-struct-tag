@@ -31,6 +31,15 @@ func (t *StructTag) Get(key string) (*Item, bool) {
 	return nil, false
 }
 
+func (t *StructTag) Delete(key string) {
+	for i, item := range t.items {
+		if item.Key == key {
+			t.items = append(t.items[:i], t.items[i+1:]...)
+			return
+		}
+	}
+}
+
 func NewTagFromField(field reflect.StructField) *StructTag {
 	st := &StructTag{
 		raw:   field.Tag,
