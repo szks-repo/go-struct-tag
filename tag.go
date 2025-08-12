@@ -17,11 +17,6 @@ type StructTag struct {
 	items []Item
 }
 
-type Item struct {
-	Key   string // e.g. "json", "form"
-	Value string
-}
-
 func (t *StructTag) Get(key string) (*Item, bool) {
 	for _, item := range t.items {
 		if item.Key == key {
@@ -151,4 +146,14 @@ func escape(s string) string {
 		}
 	}
 	return s
+}
+
+type Item struct {
+	Key   string // e.g. "json", "form"
+	Value string
+}
+
+func (i *Item) Delimited(delim string) []string {
+	// TODO: consider escaping the delimiter in the value
+	return strings.Split(i.Value, delim)
 }
