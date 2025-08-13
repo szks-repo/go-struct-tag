@@ -103,6 +103,7 @@ func TestStructTag_Delimited(t *testing.T) {
 				assert.True(t, delimiteds.HasKey("class"))
 				assert.True(t, delimiteds.HasKey("comment"))
 				assert.True(t, delimiteds.HasKey("where"))
+				assert.False(t, delimiteds.HasKey("none"))
 			},
 		},
 	}
