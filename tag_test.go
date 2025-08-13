@@ -50,3 +50,72 @@ func TestNewFromField(t *testing.T) {
 		})
 	}
 }
+
+func TestStructTag_Delimited(t *testing.T) {
+	t.Parallel()
+
+	type args struct {
+		tagKey string
+		delim  Delimiter
+	}
+
+	tets := []struct {
+		anyStruct  any
+		args       args
+		want       *DelimitedValues
+		itemChecks func(*testing.T, *DelimitedValues)
+	}{
+		{
+			anyStruct: struct {
+				Name string `json:"name,omitempty" form:"name"`
+			}{},
+			args: args{
+				tagKey: "json",
+				delim:  Delimiter{Delim: ","},
+			},
+			want: &DelimitedValues{
+				delim: Delimiter{Delim: ","},
+				values: []*DelimitedValue{
+					{Key: "name"},
+					{Key: "omitempty"},
+				},
+			},
+		},
+		{
+			anyStruct: struct {
+				Age int32 `json:"age,omitzero" gorm:"index:,class:FULLTEXT,comment:hello world,where:age > 10"`
+			}{},
+			args: args{
+				tagKey: "gorm",
+				delim:  Delimiter{Delim: ",", KeyValueSep: ":"},
+			},
+			want: &DelimitedValues{
+				delim: Delimiter{Delim: ",", KeyValueSep: ":"},
+				values: []*DelimitedValue{
+					{Key: "index"},
+					{Key: "class", Value: "FULLTEXT"},
+					{Key: "comment", Value: "hello world"},
+					{Key: "where", Value: "age > 10"},
+				},
+			},
+			itemChecks: func(t *testing.T, delimiteds *DelimitedValues) {
+				assert.True(t, delimiteds.HasKey("index"))
+				assert.True(t, delimiteds.HasKey("class"))
+				assert.True(t, delimiteds.HasKey("comment"))
+				assert.True(t, delimiteds.HasKey("where"))
+			},
+		},
+	}
+
+	for _, tt := range tets {
+		t.Run("", func(t *testing.T) {
+			tag := NewTagFromField(reflect.TypeOf(tt.anyStruct).Field(0))
+			item, _ := tag.Get(tt.args.tagKey)
+			got := item.Delimited(tt.args.delim)
+			assert.Equal(t, tt.want, got)
+			if tt.itemChecks != nil {
+				tt.itemChecks(t, got)
+			}
+		})
+	}
+}
