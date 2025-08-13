@@ -153,7 +153,67 @@ type Item struct {
 	Value string
 }
 
-func (i *Item) Delimited(delim string) []string {
+func (i *Item) Delimited(delim Delimiter) *DelimitedValues {
+	if delim.Delim == "" {
+		return &DelimitedValues{
+			delim:  delim,
+			values: []*DelimitedValue{{Key: i.Value}},
+		}
+	}
+
 	// TODO: consider escaping the delimiter in the value
-	return strings.Split(i.Value, delim)
+	var delimiteds []*DelimitedValue
+	for _, delimited := range strings.Split(i.Value, delim.Delim) {
+		if delim.KeyValueSep != "" && strings.Contains(delimited, delim.KeyValueSep) {
+			parts := strings.SplitN(delimited, delim.KeyValueSep, 2)
+			if len(parts) == 2 {
+				delimiteds = append(delimiteds, &DelimitedValue{
+					Key:   parts[0],
+					Value: parts[1],
+				})
+			}
+		} else {
+			delimiteds = append(delimiteds, &DelimitedValue{
+				Key: delimited,
+			})
+		}
+	}
+
+	return &DelimitedValues{
+		values: delimiteds,
+		delim:  delim,
+	}
+}
+
+type Delimiter struct {
+	Delim       string
+	KeyValueSep string
+}
+
+type DelimitedValue struct {
+	Key   string
+	Value string
+}
+
+type DelimitedValues struct {
+	delim  Delimiter
+	values []*DelimitedValue
+}
+
+func (d DelimitedValues) HasKey(key string) bool {
+	for _, item := range d.values {
+		if item.Key == key {
+			return true
+		}
+	}
+	return false
+}
+
+func (d DelimitedValues) Get(key string) (*DelimitedValue, bool) {
+	for _, item := range d.values {
+		if item.Key == key {
+			return item, true
+		}
+	}
+	return nil, false
 }
